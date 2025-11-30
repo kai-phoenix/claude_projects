@@ -88,3 +88,251 @@ ClaudeCodeは私に対する質問・確認・ファイル生成前の合意分�
 
 もし技術使用上で英語が必要な箇所(コード・設定名など)がある場合でも、
 説明・確認メッセージは日本語優先とする。
+
+# 7. 開発コマンド・環境チェックリスト
+
+## Node.js / JavaScript プロジェクト
+
+### セットアップ
+```bash
+npm install
+```
+
+### テスト実行
+```bash
+npm test                          # テスト全体実行
+npm run test:watch               # watch モード（存在する場合）
+npm run test -- --testNamePattern="<pattern>"  # 特定のテストのみ実行
+```
+
+### コード品質チェック
+```bash
+npm run lint                      # Linting（ESLint など）
+npm run format                    # コードフォーマット（Prettier など）
+npm run type-check               # 型チェック（TypeScript）
+npm run build                     # ビルド（存在する場合）
+```
+
+## Python プロジェクト
+
+### セットアップ
+```bash
+pip install -r requirements.txt   # または poetry install
+python -m pytest tests/ -v        # テスト実行（verbose）
+```
+
+### テスト実行
+```bash
+pytest tests/                     # テスト全体実行
+pytest tests/ -v                  # verbose モード
+pytest tests/ -k <test_name>      # 特定のテストのみ実行
+pytest tests/ --cov=src          # カバレッジ表示（pytest-cov導入時）
+```
+
+### コード品質チェック
+```bash
+black src/ tests/                 # フォーマット
+flake8 src/ tests/               # Linting（存在する場合）
+mypy src/                         # 型チェック（存在する場合）
+```
+
+## Laravel / PHP プロジェクト
+
+### セットアップ
+```bash
+composer install
+cp .env.example .env
+php artisan migrate              # DB マイグレーション（必要な場合）
+```
+
+### テスト実行
+```bash
+php artisan test                                  # テスト全体実行
+php artisan test --filter=<TestClass>           # 特定のテストのみ実行
+php artisan test --filter=<method> --group=unit # Unit テストのみ
+```
+
+### コード品質チェック
+```bash
+./vendor/bin/phpstan             # 静的解析（導入時）
+./vendor/bin/pint                # コードスタイル修正（Laravel 8.73+）
+```
+
+## Docker 環境
+
+### コンテナ起動・停止
+```bash
+docker-compose up -d             # バックグラウンド起動
+docker-compose down              # 全コンテナ停止
+docker-compose logs -f <service> # ログ監視
+```
+
+### よくあるコマンド
+```bash
+docker-compose exec <service> bash    # コンテナにアクセス
+docker-compose restart <service>      # 再起動
+docker-compose build                  # イメージ再ビルド
+```
+
+## 新規プロジェクト開始時のチェックリスト
+
+```
+□ README.md に以下を明記
+  □ 目的・学習テーマ
+  □ 使用技術・バージョン
+  □ セットアップ手順（npm install, pip install など）
+  □ テスト実行方法
+  □ ビルド・実行コマンド（存在する場合）
+
+□ .env.example を作成（秘密情報が必要な場合）
+
+□ .gitignore を設定
+  □ node_modules / __pycache__ / vendor
+  □ .env（.env.example は含める）
+  □ build/ / dist/ / .next/ など生成ファイル
+
+□ 最初のテストが 1 つ以上動く状態で完成とする
+  □ npm test / pytest / php artisan test が実行可能
+
+□ src/ ディレクトリを作成（テンプレなし）
+```
+
+# 8. アーキテクチャ判断基準
+
+## 全体構造
+
+### UI層 と API層 の分離
+- Frontend（Web/Mobile） と Backend（API/Service） は別リポジトリ/別プロジェクト管理を基本とする
+- モノレポが必要な場合は `/packages/` ディレクトリを使用して責務を明確に
+
+### データフロー（標準パターン）
+```
+Entry Point (CLI / API endpoint / Web Handler)
+     ↓
+Application Layer (ビジネスロジック・オーケストレーション・バリデーション)
+     ↓
+Domain Layer (エンティティ・ドメインルール・集約)
+     ↓
+Infrastructure Layer (DB / API Client / File System)
+```
+
+**各層の責務**:
+- **Entry Point**: リクエスト受け取り、レスポンス返却のみ
+- **Application**: 処理の流れ制御、トランザクション管理
+- **Domain**: ビジネスルールの実装、バリデーション
+- **Infrastructure**: データ取得・永続化、外部連携
+
+### ファイル・ディレクトリ構成（言語別）
+
+#### JavaScript/TypeScript（Next.js, Express など）
+```
+src/
+├── app/              # ページ/ルーハンドラ（Next.js の場合）
+├── api/              # API エンドポイント
+├── components/       # UI コンポーネント
+├── services/         # ビジネスロジック
+├── domain/           # エンティティ・バリデーション
+├── lib/              # ユーティリティ関数
+└── __tests__/        # テスト
+```
+
+#### Python
+```
+src/
+├── main.py           # エントリーポイント（CLI/Webサーバ）
+├── app/              # ビジネスロジック層
+├── domain/           # エンティティ・ドメインルール
+├── infrastructure/   # DB/API クライアント
+└── __init__.py
+tests/
+├── unit/             # ユニットテスト
+├── integration/      # 統合テスト
+└── conftest.py       # pytest 設定
+```
+
+#### PHP/Laravel
+```
+app/
+├── Http/Controllers/  # Controller（Entry Point）
+├── Services/          # ビジネスロジック層
+├── Models/            # Domain エンティティ
+├── Repositories/      # Infrastructure（DB アクセス）
+└── Requests/          # バリデーション
+tests/
+├── Unit/              # ユニットテスト
+├── Feature/           # 統合テスト
+└── TestCase.php       # 基本クラス
+```
+
+## テスト戦略
+
+### テストレベルの定義
+- **Unit Test**: 単一の関数/メソッド/クラスをテスト（外部依存はモック化）
+- **Integration Test**: 複数層の連携をテスト（DB はテスト用に隔離）
+- **E2E Test**: 実際のワークフロー全体をテスト（大型プロジェクト・Web UI テストのみ）
+
+### テスト対象の優先順位
+1. ドメインロジック（ビジネスルール）
+2. API エンドポイント・ハンドラ
+3. リポジトリ/DB クエリ（データ層）
+4. ユーティリティ関数
+
+### テストしなくてもよい箇所
+- フレームワークの標準機能（Rails の自動ルーティング等）
+- 外部ライブラリの検証（すでにテストされている）
+- UI レイアウト（スナップショットテストは過度）
+
+## セキュリティレビューチェックリスト
+
+新規プロジェクト・大型変更時に必ず確認:
+
+```
+入力バリデーション
+□ ユーザー入力は全て バリデーション・サニタイズ対象
+□ API リクエストボディ・クエリパラメータをチェック
+□ ファイルアップロード時はサイズ・形式を制限
+
+SQLインジェクション / NoSQL インジェクション
+□ SQL/NoSQL クエリはパラメータ化クエリを使用
+□ ORM を使用している場合、raw クエリは最小化
+
+認証・認可
+□ API キー / Session Token は env に隔離
+□ JWT の署名検証が実装済み
+□ ユーザー認証情報（password）は絶対にログに出力しない
+
+CORS / CSRF / XSS（Web API の場合）
+□ CORS は必要な origin のみを許可
+□ CSRF トークン実装（フォーム送信時）
+□ XSS 対策：テンプレートエンジンは自動エスケープ対応
+
+ファイル操作
+□ アップロードファイルはウイルススキャン検討
+□ ファイルパス traversal 対策（../../../ 等）
+□ アップロード先は web root の外に配置
+
+秘密情報管理
+□ API key / 認証情報は .env に隔離
+□ .env ファイルは .gitignore に含める
+□ Git 履歴から秘密情報がリークしていないか確認
+
+エラーハンドリング
+□ エラーメッセージに内部情報を含めない
+□ スタックトレースを本番環境に出力しない
+□ ログには十分な情報を含める（デバッグ用）
+```
+
+# 9. プロジェクト完成の定義
+
+学習用プロジェクトが「完成」とみなされる条件:
+
+- [ ] README.md に目的・実行方法が明記されている
+- [ ] 最初のテストが 1 つ以上実行でき、パスしている
+- [ ] src/ 以下に最小限の実装が存在する（ダミーコードは不可）
+- [ ] セキュリティレビュー対象項目をチェック済み
+- [ ] 依存ライブラリのバージョンが明記されている（package.json / requirements.txt など）
+- [ ] Git コミットメッセージが日本語で意図が明確
+- [ ] `.env.example` が存在する（秘密情報が必要な場合）
+
+「完成度」より「回転率」を優先するため、上記を満たせばプロジェクト化完了。
+その後の実装詳細・最適化は別途学習のテーマとする。
