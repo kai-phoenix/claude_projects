@@ -13,151 +13,273 @@ AWS の CI/CD パイプライン（GitHub Actions + CodeDeploy + EC2）を使っ
 
 ## 使用技術
 
-- **Next.js**: 14（App Router）
-- **言語**: TypeScript
-- **テスト**: Jest + React Testing Library
-- **CI/CD**: GitHub Actions
-- **AWS リソース**: CodeDeploy, EC2, IAM, ECR
-- **IaC**: CloudFormation
-- **コンテナ**: Docker
-- **Node.js**: 20 LTS
+- Next.js 14（App Router）
+- TypeScript
+- Jest + React Testing Library
+- GitHub Actions
+- AWS: CodeDeploy / EC2 / IAM / ECR
+- CloudFormation
+- Docker
+- Node.js 20 LTS
 
-## セットアップ手順
+---
 
-### 前提条件
+## 最短ゴール（今日の完了条件）
 
-- Node.js 20 以上
-- Docker がインストール済み
-- AWS アカウントと認証情報が設定済み
-- GitHub リポジトリの設定済み
+以下を満たせば今日の学習は完了:
 
-### インストール
+- [ ] ローカルで `npm test` と `npm run build` が通る
+- [ ] CloudFormation で EC2 + IAM + SecurityGroup が作成できる
+- [ ] GitHub Actions の `test` ジョブが成功する
+- [ ] `main` への push で `deploy` ジョブが開始される
+
+---
+
+## 事前準備チェックリスト（着手前）
+
+### ローカル環境
+
+- [ ] Node.js 20 以上
+- [ ] Docker / docker-compose が使える
+- [ ] AWS CLI が使える（`aws --version`）
+
+### AWS 側
+
+- [ ] EC2 キーペアが作成済み（CloudFormation `KeyPairName` 用）
+- [ ] ECR リポジトリを作成済み
+- [ ] CodeDeploy の Application / Deployment Group を準備済み
+- [ ] デプロイ成果物アップロード用 S3 バケットを準備済み
+
+### GitHub 側
+
+- [ ] Actions Secrets を設定済み
+  - `AWS_ACCESS_KEY_ID`
+  - `AWS_SECRET_ACCESS_KEY`
+  - `AWS_REGION`
+  - `ECR_REPOSITORY`
+  - `S3_BUCKET`
+
+---
+
+## フェーズ別タスク分解
+
+### Phase 0: ローカル起動確認
+
+**入力**
+- ソースコード一式
+
+**作業**
+- [ ] 依存関係をインストール
+- [ ] 開発サーバーを起動
+- [ ] `/api/health` を確認
+
+**確認コマンド**
 
 ```bash
 npm install
+npm run dev
 ```
 
-## 実行方法
+**完了条件**
+- [ ] `http://localhost:3000` が表示される
+- [ ] `http://localhost:3000/api/health` が `status: ok` を返す
 
-### ローカル開発サーバーを起動
+---
+
+### Phase 1: テスト・ビルドを安定化
+
+**入力**
+- ローカルで起動済みの状態
+
+**作業**
+- [ ] 単体テストを実行
+- [ ] カバレッジを確認
+- [ ] 本番ビルドを実行
+
+**確認コマンド**
+
+```bash
+npm test
+npm test -- --coverage
+npm run build
+```
+
+**完了条件**
+- [ ] テストが全件パス
+- [ ] ビルドが成功
+
+---
+
+### Phase 2: インフラ作成（CloudFormation）
+
+**入力**
+- `cloudformation/template.yaml`
+
+**作業**
+- [ ] Stack を作成
+- [ ] EC2 / IAM Role / SecurityGroup の作成を確認
+- [ ] Outputs（Public IP / DNS）を確認
+
+**確認コマンド**
+
+```bash
+aws cloudformation create-stack \
+  --stack-name aws-cicd-sample \
+  --template-body file://cloudformation/template.yaml \
+  --capabilities CAPABILITY_IAM \
+  --parameters ParameterKey=KeyPairName,ParameterValue=<your-keypair>
+```
+
+**完了条件**
+- [ ] Stack ステータスが `CREATE_COMPLETE`
+- [ ] Outputs から接続先情報が取得できる
+
+---
+
+### Phase 3: コンテナとレジストリ連携
+
+**入力**
+- Dockerfile / docker-compose.yml / ECR リポジトリ
+
+**作業**
+- [ ] ローカルでコンテナビルド
+- [ ] ECR ログイン
+- [ ] イメージ push 手順を確認
+
+**確認コマンド（例）**
+
+```bash
+docker-compose up --build
+```
+
+**完了条件**
+- [ ] ローカルコンテナ起動が成功
+- [ ] ECR push の前提がそろっている
+
+---
+
+### Phase 4: GitHub Actions 接続
+
+**入力**
+- `.github/workflows/deploy.yml`
+- GitHub Secrets
+
+**作業**
+- [ ] PR で `test` ジョブが通ることを確認
+- [ ] `main` push で `deploy` が起動することを確認
+
+**完了条件**
+- [ ] `test` ジョブ成功
+- [ ] `deploy` ジョブが `needs: test` の順で実行される
+
+---
+
+### Phase 5: デプロイ確認
+
+**入力**
+- EC2 / CodeDeploy / 最新イメージ
+
+**作業**
+- [ ] デプロイ後に EC2 公開URLへアクセス
+- [ ] `api/health` の疎通確認
+- [ ] 失敗時の切り戻し方針をメモ
+
+**完了条件**
+- [ ] 公開先でアプリが動作
+- [ ] 問題発生時の調査ポイントを記録
+
+---
+
+## 実行コマンドまとめ
+
+### ローカル開発
 
 ```bash
 npm run dev
 ```
 
-ブラウザで http://localhost:3000 にアクセス
+### テスト
 
-### 本番ビルド
+```bash
+npm test
+npm test -- --watch
+npm test -- --coverage
+```
+
+### ビルド
 
 ```bash
 npm run build
 npm start
 ```
 
-### Docker で実行
+### Docker
 
 ```bash
-docker-compose up
+docker-compose up --build
 ```
 
-## テストの実行方法
-
-### 全テストを実行
-
-```bash
-npm test
-```
-
-### ウォッチモード（開発中）
-
-```bash
-npm test -- --watch
-```
-
-### カバレッジを表示
-
-```bash
-npm test -- --coverage
-```
-
-## API エンドポイント
-
-### GET /api/health
-
-ヘルスチェックエンドポイント
-
-**レスポンス例:**
-```json
-{
-  "status": "ok",
-  "timestamp": "2025-11-30T12:00:00Z"
-}
-```
-
-## デプロイ方法
-
-### 1. GitHub push で自動デプロイが開始
-
-```bash
-git push origin main
-```
-
-GitHub Actions が以下を自動実行：
-- npm test（テスト実行）
-- npm run build（ビルド）
-- Docker イメージを ECR に push
-- CodeDeploy を通じて EC2 に自動デプロイ
-
-### 2. AWS CloudFormation でインフラをセットアップ
-
-```bash
-aws cloudformation create-stack \
-  --stack-name aws-cicd-sample \
-  --template-body file://cloudformation/template.yaml \
-  --capabilities CAPABILITY_IAM
-```
+---
 
 ## 環境変数
 
-`.env.example` をコピーして `.env.local` を作成：
+`.env.example` をコピーして `.env.local` を作成:
 
 ```bash
 cp .env.example .env.local
 ```
 
-必要な環境変数を設定します（AWS 認証情報など）。
+必要値は `.env.example` を参照。
 
-## TODO（今日やること）
+---
 
-- [ ] Next.js アプリケーションの基本構造を実装
-- [ ] API ルート（/api/health）を実装
-- [ ] Jest + React Testing Library でテストを書く
-- [ ] GitHub Actions ワークフローを設定
-- [ ] CloudFormation テンプレートで EC2 を定義
-- [ ] Dockerfile を作成してコンテナ化
-- [ ] ローカルで docker-compose で動作確認
-- [ ] GitHub に push して CI/CD パイプラインを確認
+## API エンドポイント
 
-## トラブルシューティング
+### GET /api/health
 
-### npm install でエラーが出る場合
+レスポンス例:
+
+```json
+{
+  "status": "ok",
+  "timestamp": "2026-02-21T12:00:00.000Z"
+}
+```
+
+---
+
+## トラブルシューティング（フェーズ対応）
+
+### Phase 0-1: `npm install` / `npm test` が失敗する
 
 ```bash
 rm -rf node_modules package-lock.json
 npm install
 ```
 
-### Docker ビルドが失敗する場合
+### Phase 3: Docker ビルドが失敗する
 
 ```bash
 docker system prune -a
 docker-compose build --no-cache
 ```
 
-### GitHub Actions が失敗する場合
+### Phase 4-5: GitHub Actions / AWS デプロイ失敗
 
-- AWS 認証情報が GitHub Secrets に設定されているか確認
-- CloudFormation スタックが正しく作成されているか AWS コンソールで確認
+- [ ] GitHub Secrets 名と値を再確認
+- [ ] CloudFormation Stack 状態を確認
+- [ ] CodeDeploy Application / Deployment Group 名の一致を確認
+- [ ] ECR リポジトリ名が `deploy.yml` と一致しているか確認
+
+---
+
+## 次の1手（迷った時の再開テンプレ）
+
+1. 今いるフェーズを 1 つ選ぶ
+2. そのフェーズの「完了条件」だけ満たす
+3. 成果を 3 行メモする（やったこと / 詰まったこと / 次にやること）
+
+---
 
 ## 参考リンク
 
