@@ -80,9 +80,9 @@ AWS の CI/CD パイプライン（GitHub Actions + CodeDeploy + EC2）を使っ
 - ソースコード一式
 
 **作業**
-- [ ] 依存関係をインストール
-- [ ] 開発サーバーを起動
-- [ ] `/api/health` を確認
+- [x] 依存関係をインストール
+- [x] 開発サーバーを起動
+- [x] `/api/health` を確認
 
 **確認コマンド**
 
@@ -92,8 +92,8 @@ npm run dev
 ```
 
 **完了条件**
-- [ ] `http://localhost:3000` が表示される
-- [ ] `http://localhost:3000/api/health` が `status: ok` を返す
+- [x] `http://localhost:3000` が表示される
+- [x] `http://localhost:3000/api/health` が `status: ok` を返す
 
 ---
 
