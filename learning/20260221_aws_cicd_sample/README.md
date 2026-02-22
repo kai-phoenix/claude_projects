@@ -11,6 +11,15 @@ AWS の CI/CD パイプライン（GitHub Actions + CodeDeploy + EC2）を使っ
 - Docker でアプリケーションをコンテナ化
 - EC2 への自動デプロイパイプラインを構築
 
+### 追加テーマ（Next.js 実装）
+
+**テーマ名:** ヘルスチェック可視化ダッシュボード（最小版）
+
+狙い:
+- API 応答（`status` / `timestamp`）を UI に表示する流れを定着
+- App Router + コンポーネント分割 + テストの最小セットを回す
+- CI/CD 以前に「アプリ本体の価値」を1つ作る
+
 ## 使用技術
 
 - Next.js 14（App Router）
@@ -28,6 +37,8 @@ AWS の CI/CD パイプライン（GitHub Actions + CodeDeploy + EC2）を使っ
 
 以下を満たせば今日の学習は完了:
 
+- [ ] Next.js 画面でヘルス状態が見える（Loading / Error / Success）
+- [ ] コンポーネントテストと API テストが通る
 - [ ] ローカルで `npm test` と `npm run build` が通る
 - [ ] CloudFormation で EC2 + IAM + SecurityGroup が作成できる
 - [ ] GitHub Actions の `test` ジョブが成功する
@@ -107,6 +118,32 @@ npm run build
 **完了条件**
 - [ ] テストが全件パス
 - [ ] ビルドが成功
+
+---
+
+### Phase 1.5: Next.js 実装タスク（今回のメイン）
+
+**対象ファイル**
+- `app/page.tsx`
+- `components/StatusCard.tsx`
+- `app/api/health/route.ts`
+- `__tests__/components.test.tsx`
+- `__tests__/api.test.ts`
+
+**作業（実装タスク）**
+- [ ] `StatusCard` に 3 状態（Loading / Error / Success）を明確に表示
+- [ ] `page.tsx` で `fetch('/api/health')` を呼び、結果をカードに渡す
+- [ ] API 応答に `environment`（例: `development`）を追加
+- [ ] 成功時に「最終確認時刻（timestamp）」を読みやすい表示にする
+- [ ] エラー時に再試行ボタン（`再取得`）を追加する
+
+**テストタスク**
+- [ ] `StatusCard` の表示分岐（3状態）をテスト
+- [ ] `GET /api/health` が `status` / `timestamp` / `environment` を返すことをテスト
+
+**完了条件**
+- [ ] UI でヘルス状態が視覚的に判別できる
+- [ ] 追加したテストがパス
 
 ---
 
@@ -278,6 +315,12 @@ docker-compose build --no-cache
 1. 今いるフェーズを 1 つ選ぶ
 2. そのフェーズの「完了条件」だけ満たす
 3. 成果を 3 行メモする（やったこと / 詰まったこと / 次にやること）
+
+### 今日のおすすめ着手順（Next.js実装を先にやる場合）
+
+1. Phase 1.5 の `StatusCard` 表示分岐を先に作る
+2. テストを追加して `npm test` を通す
+3. その後に Phase 2 以降（AWS 側）へ進む
 
 ---
 
