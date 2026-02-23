@@ -131,10 +131,10 @@ npm run build
 - `__tests__/api.test.ts`
 
 **作業（実装タスク）**
-- [ ] `StatusCard` に 3 状態（Loading / Error / Success）を明確に表示
-- [ ] `page.tsx` で `fetch('/api/health')` を呼び、結果をカードに渡す
+- [x] `StatusCard` に 3 状態（Loading / Error / Success）を明確に表示
+- [x] `page.tsx` で `fetch('/api/health')` を呼び、結果をカードに渡す
 - [ ] API 応答に `environment`（例: `development`）を追加
-- [ ] 成功時に「最終確認時刻（timestamp）」を読みやすい表示にする
+- [x] 成功時に「最終確認時刻（timestamp）」を読みやすい表示にする
 - [ ] エラー時に再試行ボタン（`再取得`）を追加する
 
 **テストタスク**
