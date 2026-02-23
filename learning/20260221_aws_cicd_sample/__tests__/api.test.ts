@@ -1,19 +1,12 @@
-describe('/api/health', () => {
-  it('should return ok status', async () => {
-    const response = await fetch('http://localhost:3000/api/health')
-    const data = await response.json()
+import {GET} from '@/app/api/health/route'
 
-    expect(response.status).toBe(200)
+describe('/api/health route',()=> {
+  it('returns ok payload',async()=>{
+    const res = await GET()
+    const data = await res.json()
+    expect(res.status).toBe(200)
     expect(data.status).toBe('ok')
-    expect(data.timestamp).toBeDefined()
-  })
-
-  it('timestamp should be valid ISO string', async () => {
-    const response = await fetch('http://localhost:3000/api/health')
-    const data = await response.json()
-
-    const timestamp = new Date(data.timestamp)
-    expect(timestamp).toBeInstanceOf(Date)
-    expect(timestamp.getTime()).toBeGreaterThan(0)
+    expect(data.environment).toBeDefined()
+    expect(new Date(data.timestamp).getTime()).toBeGreaterThan(0)
   })
 })

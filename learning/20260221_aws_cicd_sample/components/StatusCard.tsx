@@ -3,10 +3,11 @@ import React from 'react'
 interface StatusCardProps {
   loading: boolean
   error: string | null
-  health: { status: string; timestamp: string } | null
+  health: { status: string; timestamp: string; environment: string } | null
+  onRetry: () => void
 }
 
-export default function StatusCard({ loading, error, health }: StatusCardProps) {
+export default function StatusCard({ loading, error, health, onRetry }: StatusCardProps) {
   return (
     <div style={styles.card}>
       <h2 style={styles.cardTitle}>ヘルスチェック</h2>
@@ -16,6 +17,9 @@ export default function StatusCard({ loading, error, health }: StatusCardProps) 
       {error && (
         <div style={styles.error}>
           <p style={styles.errorText}>❌ エラー: {error}</p>
+          <button onClick={onRetry} style= {{ marginTop: '12px', padding: '8px 16px', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+          再試行
+        </button>
         </div>
       )}
 
@@ -23,6 +27,7 @@ export default function StatusCard({ loading, error, health }: StatusCardProps) 
         <div style={styles.success}>
           <p style={styles.statusOk}>✅ ステータス: {health.status}</p>
           <p style={styles.timestamp}>時刻: {new Date(health.timestamp).toLocaleString('ja-JP')}</p>
+          <p style={styles.timestamp}>環境: {health.environment}</p>
         </div>
       )}
     </div>

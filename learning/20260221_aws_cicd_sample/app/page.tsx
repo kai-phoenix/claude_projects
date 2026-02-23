@@ -50,7 +50,7 @@ export default function Home() {
           <h2 style={styles.sectionTitle}>API エンドポイント</h2>
           <code style={styles.code}>GET /api/health</code>
           <p style={styles.description}>
-            サーバーのヘルスチェックエンドポイント。常に <code style={styles.code}>{`status: "ok"`}</code> を返します。
+            サーバーのヘルスチェックエンドポイント。常に <code style={styles.code}>status: "ok"</code> を返します。
           </p>
         </section>
       </div>
